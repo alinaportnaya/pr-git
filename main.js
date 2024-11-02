@@ -1,94 +1,127 @@
-// Завдання 1
-const firstRow = 'Slow and steady wins the race';
-const secondRow = 'You can say that again';
-
-// Функція для підрахунку конкретної літери у рядку
-function countLetter(str, letter) {
-    let count = 0;
-    for (let i = 0; i < str.length; i++) {
-        if (str.charAt(i).toLowerCase() === letter.toLowerCase()) {
-            count++;
-        }
+// Об'єкти покемонів
+const character = {
+    name: "Pikachu",
+    defaultHP: 100,
+    damageHP: 100,
+    elHP: document.getElementById('health-character'),
+    elProgressbar: document.getElementById('progressbar-character'),
+    attacks: {
+        thunderJolt: 20,
+        electroBall: 35
     }
-    return count;
+};
+
+const enemy = {
+    name: "Charmander",
+    defaultHP: 100,
+    damageHP: 100,
+    elHP: document.getElementById('health-enemy'),
+    elProgressbar: document.getElementById('progressbar-enemy'),
+    attacks: {
+        fireBall: 25,
+        flameCharge: 30
+    }
+};
+
+// Створюємо кнопки
+function createButtons() {
+    const control = document.querySelector('.control');
+    control.innerHTML = '';
+
+    const thunderJoltBtn = document.createElement('button');
+    thunderJoltBtn.classList.add('button');
+    thunderJoltBtn.innerText = 'Thunder Jolt';
+    
+    const electroBallBtn = document.createElement('button');
+    electroBallBtn.classList.add('button');
+    electroBallBtn.innerText = 'Electro Ball';
+    
+    control.appendChild(thunderJoltBtn);
+    control.appendChild(electroBallBtn);
+    
+    return {
+        thunderJoltBtn,
+        electroBallBtn
+    };
 }
 
-// Функція порівняння рядків
-function getRow(firstRow, secondRow) {
-    const firstCount = countLetter(firstRow, 'a');
-    const secondCount = countLetter(secondRow, 'a');
-    
-    return firstCount > secondCount ? firstRow : secondRow;
-}
-// Тести для першого завдання
-console.log(getRow(firstRow, secondRow)); // 'You can say that again'
-
-// Інтерактивна версія першого завдання
-function interactiveLetterCount() {
-    const text1 = prompt('Введіть перший рядок:');
-    const text2 = prompt('Введіть другий рядок:');
-    const letterToCount = prompt('Яку літеру порахувати?');
-    
-    const count1 = countLetter(text1, letterToCount);
-    const count2 = countLetter(text2, letterToCount);
-    
-    const result = count1 > count2 ? text1 : text2;
-    alert(`Рядок з більшою кількістю літери '${letterToCount}': ${result}`);
+// Функція для генерації випадкового числа
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Завдання 2
-function formattedPhone(phone) {
-    let cleanPhone = phone.replace(/\D/g, '');
-
-    if (cleanPhone.length === 10) {  // формат 0671234567
-        cleanPhone = '38' + cleanPhone;
-    } else if (cleanPhone.length === 11 && cleanPhone.startsWith('8')) {  // формат 80671234567
-        cleanPhone = '3' + cleanPhone;
+// Функція для зміни HP
+function changeHP(damage, person) {
+    if (person.damageHP < damage) {
+        person.damageHP = 0;
+        alert(`${person.name} програв бій!`);
+        disableButtons();
+    } else {
+        person.damageHP -= damage;
     }
     
-    // Перевіряємо, чи маємо правильну довжину після обробки
-    if (cleanPhone.length !== 12) {
-        return 'Неправильний формат номера';
-    }
-    
-    // Перевіряємо, чи починається з 380
-    if (!cleanPhone.startsWith('380')) {
-        return 'Неправильний формат номера';
-    }
-    
-    // Форматуємо номер
-    return `+${cleanPhone.slice(0, 2)} (${cleanPhone.slice(2, 5)}) ${cleanPhone.slice(5, 8)}-${cleanPhone.slice(8, 10)}-${cleanPhone.slice(10)}`;
+    renderHP(person);
 }
 
-// Тести для другого завдання
-console.log(formattedPhone('+380664567890')); // +38 (066) 456-78-90
-console.log(formattedPhone('80664567890'));   // +38 (066) 456-78-90
-console.log(formattedPhone('0664567890'));    // +38 (066) 456-78-90
-console.log(formattedPhone('380664567890'));  // +38 (066) 456-78-90
-
-// Інтерактивна версія другого завдання
-function interactivePhoneFormat() {
-    const phoneNumber = prompt('Введіть номер телефону:');
-    const formatted = formattedPhone(phoneNumber);
-    alert(formatted);
+// Функція для рендерингу HP
+function renderHP(person) {
+    renderHPLife(person);
+    renderProgressbarHP(person);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const container = document.createElement('div');
-    container.style.textAlign = 'center';
-    container.style.marginTop = '20px';
+// Функція для рендерингу життів
+function renderHPLife(person) {
+    person.elHP.innerText = person.damageHP + ' / ' + person.defaultHP;
+}
 
-    const button1 = document.createElement('button');
-    button1.textContent = 'Порахувати літери';
-    button1.onclick = interactiveLetterCount;
-    button1.style.margin = '10px';
+// Функція для рендерингу прогресбару
+function renderProgressbarHP(person) {
+    person.elProgressbar.style.width = person.damageHP + '%';
+    
+    // Зміна кольору прогресбару в залежності від кількості HP
+    if (person.damageHP < 25) {
+        person.elProgressbar.classList.add('critical');
+        person.elProgressbar.classList.remove('low');
+    } else if (person.damageHP < 50) {
+        person.elProgressbar.classList.add('low');
+        person.elProgressbar.classList.remove('critical');
+    } else {
+        person.elProgressbar.classList.remove('low', 'critical');
+    }
+}
 
-    const button2 = document.createElement('button');
-    button2.textContent = 'Форматувати телефон';
-    button2.onclick = interactivePhoneFormat;
-    button2.style.margin = '10px';
+// Функція атаки
+function attack(attackType) {
+    const characterDamage = 
+        attackType === 'thunder' ? character.attacks.thunderJolt : character.attacks.electroBall;
+    
+    // Наносимо шкоду противнику
+    changeHP(random(characterDamage - 5, characterDamage + 5), enemy);
+    
+    // Противник атакує у відповідь
+    if (enemy.damageHP > 0) {
+        const enemyAttack = Math.random() < 0.5 ? enemy.attacks.fireBall : enemy.attacks.flameCharge;
+        changeHP(random(enemyAttack - 5, enemyAttack + 5), character);
+    }
+}
 
-    container.appendChild(button1);
-    container.appendChild(button2);
-    document.body.appendChild(container);
-});
+// Функція для відключення кнопок
+function disableButtons() {
+    const buttons = document.querySelectorAll('.button');
+    buttons.forEach(btn => btn.disabled = true);
+}
+
+// Ініціалізація гри
+function init() {
+    console.log('Game Start!');
+    
+    const buttons = createButtons();
+    
+    buttons.thunderJoltBtn.addEventListener('click', () => attack('thunder'));
+    buttons.electroBallBtn.addEventListener('click', () => attack('electro'));
+    
+    renderHP(character);
+    renderHP(enemy);
+}
+
+init();
