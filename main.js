@@ -32,7 +32,6 @@ class Pokemon {
         const logEl = document.createElement('p');
         logEl.innerText = log;
         
-        // Використовуємо деструктуризацію для кольорів
         const { critical = '#d20000', medium = '#f1c40f', low = '#2ecc71' } = {};
         
         logEl.style.color = damage >= 35 ? critical : 
@@ -86,6 +85,32 @@ class Pokemon {
 
 const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
+const createButtonWithCounter = (button, maxClicks = 6) => {
+    let clickCount = 0;
+    const remainingClicks = maxClicks;
+    
+    const originalCallback = button.onclick;
+    
+    button.onclick = (event) => {
+        if (clickCount >= maxClicks) {
+            console.log(`Кнопка "${button.innerText}" досягла ліміту натискань!`);
+            button.disabled = true;
+            return;
+        }
+        
+        clickCount++;
+        const remaining = maxClicks - clickCount;
+        
+        console.log(`Кнопка "${button.innerText}" натиснута ${clickCount} раз(ів). Залишилось натискань: ${remaining}`);
+        
+        if (originalCallback) {
+            originalCallback.call(button, event);
+        }
+    };
+    
+    return button;
+};
+
 const createButtons = () => {
     const control = document.querySelector('.control');
     control.innerHTML = '';
@@ -105,8 +130,12 @@ const createButtons = () => {
         const button = document.createElement('button');
         button.classList.add(className);
         button.innerText = text;
-        control.appendChild(button);
-        acc[key] = button;
+        
+        // Застосовуємо лічильник кліків до кожної кнопки
+        const buttonWithCounter = createButtonWithCounter(button, 7);
+        
+        control.appendChild(buttonWithCounter);
+        acc[key] = buttonWithCounter;
         return acc;
     }, {});
 };
