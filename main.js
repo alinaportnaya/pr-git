@@ -1,142 +1,165 @@
-// Базовий клас для покемона
 class Pokemon {
-    constructor(name, defaultHP, attacks, elHP, elProgressbar) {
-        this.name = name;
-        this.defaultHP = defaultHP;
+    constructor({ name, defaultHP, attacks, elHP, elProgressbar }) {
+        Object.assign(this, { name, defaultHP, attacks, elHP, elProgressbar });
         this.damageHP = defaultHP;
-        this.elHP = elHP;
-        this.elProgressbar = elProgressbar;
-        this.attacks = attacks;
     }
 
-    // Метод для зміни HP
-    changeHP(damage) {
-        if (this.damageHP < damage) {
-            this.damageHP = 0;
-            alert(`${this.name} програв бій!`);
-            disableButtons();
-        } else {
-            this.damageHP -= damage;
-        }
+    generateLog(attacker, defender, damage) {
+        const { name: attackerName } = attacker;
+        const { name: defenderName, damageHP } = defender;
+        
+        const logs = [
+            `${attackerName} вспомнил что-то важное, но неожиданно ${defenderName} нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} поперхнулся, и за это ${defenderName} с испугу нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} забылся, но в это время наглый ${defenderName} нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} пришел в себя, но неожиданно ${defenderName} нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} поперхнулся, но в это время ${defenderName} нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} удивился, а ${defenderName} пошатнувшись нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} высморкался, но неожиданно ${defenderName} провел удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} пошатнулся, и внезапно наглый ${defenderName} нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} расстроился, как вдруг, неожиданно ${defenderName} нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`,
+            `${attackerName} пытался что-то сказать, но вдруг, неожиданно ${defenderName} нанес удар в ${damage} урона! (Осталось ${damageHP} HP)`
+        ];
+        
+        const [min, max] = [0, logs.length - 1];
+        return logs[random(min, max)];
+    }
+
+    changeHP(damage, enemy) {
+        this.damageHP = this.damageHP < damage ? 0 : this.damageHP - damage;
+        
+        const log = this.generateLog(enemy, this, damage);
+        const logEl = document.createElement('p');
+        logEl.innerText = log;
+        
+        // Використовуємо деструктуризацію для кольорів
+        const { critical = '#d20000', medium = '#f1c40f', low = '#2ecc71' } = {};
+        
+        logEl.style.color = damage >= 35 ? critical : 
+                           damage >= 20 ? medium : low;
+        
+        const { firstChild } = document.querySelector('#logs');
+        document.querySelector('#logs').insertBefore(logEl, firstChild);
         
         this.renderHP();
+        
+        if (this.damageHP === 0) {
+            alert(`${this.name} проиграл бой!`);
+            disableButtons();
+        }
     }
 
-    // Метод для рендерингу HP
     renderHP() {
         this.renderHPLife();
         this.renderProgressbarHP();
     }
 
-    // Метод для рендерингу життів
     renderHPLife() {
-        this.elHP.innerText = this.damageHP + ' / ' + this.defaultHP;
+        const { damageHP, defaultHP, elHP } = this;
+        elHP.innerText = `${damageHP} / ${defaultHP}`;
     }
 
-    // Метод для рендерингу прогресбару
     renderProgressbarHP() {
-        this.elProgressbar.style.width = this.damageHP + '%';
+        const { damageHP, defaultHP, elProgressbar } = this;
+        const percentage = (damageHP / defaultHP) * 100;
         
-        // Зміна кольору прогресбару в залежності від кількості HP
-        if (this.damageHP < 25) {
-            this.elProgressbar.classList.add('critical');
-            this.elProgressbar.classList.remove('low');
-        } else if (this.damageHP < 50) {
-            this.elProgressbar.classList.add('low');
-            this.elProgressbar.classList.remove('critical');
+        elProgressbar.style.width = `${percentage}%`;
+        
+        const { classList } = elProgressbar;
+        
+        if (percentage < 25) {
+            classList.add('critical');
+            classList.remove('low');
+        } else if (percentage < 50) {
+            classList.add('low');
+            classList.remove('critical');
         } else {
-            this.elProgressbar.classList.remove('low', 'critical');
+            classList.remove('low', 'critical');
         }
     }
 
-    // Метод для атаки
     attack(attackType) {
-        const damage = this.attacks[attackType];
+        const { [attackType]: damage } = this.attacks;
         return random(damage - 5, damage + 5);
     }
 }
 
-// Функція для генерації випадкового числа
-function random(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-// Створюємо кнопки
-function createButtons() {
+const createButtons = () => {
     const control = document.querySelector('.control');
     control.innerHTML = '';
 
-    const thunderJoltBtn = document.createElement('button');
-    thunderJoltBtn.classList.add('button');
-    thunderJoltBtn.innerText = 'Thunder Jolt';
-    
-    const electroBallBtn = document.createElement('button');
-    electroBallBtn.classList.add('button');
-    electroBallBtn.innerText = 'Electro Ball';
-    
-    control.appendChild(thunderJoltBtn);
-    control.appendChild(electroBallBtn);
-    
-    return {
-        thunderJoltBtn,
-        electroBallBtn
+    const buttons = {
+        thunderJoltBtn: {
+            class: 'button',
+            text: 'Thunder Jolt'
+        },
+        electroBallBtn: {
+            class: 'button',
+            text: 'Electro Ball'
+        }
     };
-}
 
-// Функція для відключення кнопок
-function disableButtons() {
+    return Object.entries(buttons).reduce((acc, [key, { class: className, text }]) => {
+        const button = document.createElement('button');
+        button.classList.add(className);
+        button.innerText = text;
+        control.appendChild(button);
+        acc[key] = button;
+        return acc;
+    }, {});
+};
+
+const disableButtons = () => {
     const buttons = document.querySelectorAll('.button');
     buttons.forEach(btn => btn.disabled = true);
-}
+};
 
-// Створюємо екземпляри покемонів
-const character = new Pokemon(
-    "Pikachu",
-    100,
-    {
+const character = new Pokemon({
+    name: "Pikachu",
+    defaultHP: 100,
+    attacks: {
         thunderJolt: 20,
         electroBall: 35
     },
-    document.getElementById('health-character'),
-    document.getElementById('progressbar-character')
-);
+    elHP: document.getElementById('health-character'),
+    elProgressbar: document.getElementById('progressbar-character')
+});
 
-const enemy = new Pokemon(
-    "Charmander",
-    100,
-    {
+const enemy = new Pokemon({
+    name: "Charmander",
+    defaultHP: 100,
+    attacks: {
         fireBall: 25,
         flameCharge: 30
     },
-    document.getElementById('health-enemy'),
-    document.getElementById('progressbar-enemy')
-);
+    elHP: document.getElementById('health-enemy'),
+    elProgressbar: document.getElementById('progressbar-enemy')
+});
 
-// Функція атаки
-function performAttack(attackType) {
-    // Атака персонажа
+const performAttack = (attackType) => {
     const damage = character.attack(attackType);
-    enemy.changeHP(damage);
+    enemy.changeHP(damage, character);
     
-    // Атака противника у відповідь
     if (enemy.damageHP > 0) {
+        const { fireBall, flameCharge } = enemy.attacks;
         const enemyAttackType = Math.random() < 0.5 ? 'fireBall' : 'flameCharge';
         const enemyDamage = enemy.attack(enemyAttackType);
-        character.changeHP(enemyDamage);
+        character.changeHP(enemyDamage, enemy);
     }
-}
+};
 
-// Ініціалізація гри
-function init() {
+const init = () => {
     console.log('Game Start!');
     
-    const buttons = createButtons();
+    const { thunderJoltBtn, electroBallBtn } = createButtons();
     
-    buttons.thunderJoltBtn.addEventListener('click', () => performAttack('thunderJolt'));
-    buttons.electroBallBtn.addEventListener('click', () => performAttack('electroBall'));
+    thunderJoltBtn.addEventListener('click', () => performAttack('thunderJolt'));
+    electroBallBtn.addEventListener('click', () => performAttack('electroBall'));
     
     character.renderHP();
     enemy.renderHP();
-}
+};
 
 init();
