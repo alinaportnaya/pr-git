@@ -1,27 +1,65 @@
-// Об'єкти покемонів
-const character = {
-    name: "Pikachu",
-    defaultHP: 100,
-    damageHP: 100,
-    elHP: document.getElementById('health-character'),
-    elProgressbar: document.getElementById('progressbar-character'),
-    attacks: {
-        thunderJolt: 20,
-        electroBall: 35
+// Базовий клас для покемона
+class Pokemon {
+    constructor(name, defaultHP, attacks, elHP, elProgressbar) {
+        this.name = name;
+        this.defaultHP = defaultHP;
+        this.damageHP = defaultHP;
+        this.elHP = elHP;
+        this.elProgressbar = elProgressbar;
+        this.attacks = attacks;
     }
-};
 
-const enemy = {
-    name: "Charmander",
-    defaultHP: 100,
-    damageHP: 100,
-    elHP: document.getElementById('health-enemy'),
-    elProgressbar: document.getElementById('progressbar-enemy'),
-    attacks: {
-        fireBall: 25,
-        flameCharge: 30
+    // Метод для зміни HP
+    changeHP(damage) {
+        if (this.damageHP < damage) {
+            this.damageHP = 0;
+            alert(`${this.name} програв бій!`);
+            disableButtons();
+        } else {
+            this.damageHP -= damage;
+        }
+        
+        this.renderHP();
     }
-};
+
+    // Метод для рендерингу HP
+    renderHP() {
+        this.renderHPLife();
+        this.renderProgressbarHP();
+    }
+
+    // Метод для рендерингу життів
+    renderHPLife() {
+        this.elHP.innerText = this.damageHP + ' / ' + this.defaultHP;
+    }
+
+    // Метод для рендерингу прогресбару
+    renderProgressbarHP() {
+        this.elProgressbar.style.width = this.damageHP + '%';
+        
+        // Зміна кольору прогресбару в залежності від кількості HP
+        if (this.damageHP < 25) {
+            this.elProgressbar.classList.add('critical');
+            this.elProgressbar.classList.remove('low');
+        } else if (this.damageHP < 50) {
+            this.elProgressbar.classList.add('low');
+            this.elProgressbar.classList.remove('critical');
+        } else {
+            this.elProgressbar.classList.remove('low', 'critical');
+        }
+    }
+
+    // Метод для атаки
+    attack(attackType) {
+        const damage = this.attacks[attackType];
+        return random(damage - 5, damage + 5);
+    }
+}
+
+// Функція для генерації випадкового числа
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 // Створюємо кнопки
 function createButtons() {
@@ -45,70 +83,47 @@ function createButtons() {
     };
 }
 
-// Функція для генерації випадкового числа
-function random(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-// Функція для зміни HP
-function changeHP(damage, person) {
-    if (person.damageHP < damage) {
-        person.damageHP = 0;
-        alert(`${person.name} програв бій!`);
-        disableButtons();
-    } else {
-        person.damageHP -= damage;
-    }
-    
-    renderHP(person);
-}
-
-// Функція для рендерингу HP
-function renderHP(person) {
-    renderHPLife(person);
-    renderProgressbarHP(person);
-}
-
-// Функція для рендерингу життів
-function renderHPLife(person) {
-    person.elHP.innerText = person.damageHP + ' / ' + person.defaultHP;
-}
-
-// Функція для рендерингу прогресбару
-function renderProgressbarHP(person) {
-    person.elProgressbar.style.width = person.damageHP + '%';
-    
-    // Зміна кольору прогресбару в залежності від кількості HP
-    if (person.damageHP < 25) {
-        person.elProgressbar.classList.add('critical');
-        person.elProgressbar.classList.remove('low');
-    } else if (person.damageHP < 50) {
-        person.elProgressbar.classList.add('low');
-        person.elProgressbar.classList.remove('critical');
-    } else {
-        person.elProgressbar.classList.remove('low', 'critical');
-    }
-}
-
-// Функція атаки
-function attack(attackType) {
-    const characterDamage = 
-        attackType === 'thunder' ? character.attacks.thunderJolt : character.attacks.electroBall;
-    
-    // Наносимо шкоду противнику
-    changeHP(random(characterDamage - 5, characterDamage + 5), enemy);
-    
-    // Противник атакує у відповідь
-    if (enemy.damageHP > 0) {
-        const enemyAttack = Math.random() < 0.5 ? enemy.attacks.fireBall : enemy.attacks.flameCharge;
-        changeHP(random(enemyAttack - 5, enemyAttack + 5), character);
-    }
-}
-
 // Функція для відключення кнопок
 function disableButtons() {
     const buttons = document.querySelectorAll('.button');
     buttons.forEach(btn => btn.disabled = true);
+}
+
+// Створюємо екземпляри покемонів
+const character = new Pokemon(
+    "Pikachu",
+    100,
+    {
+        thunderJolt: 20,
+        electroBall: 35
+    },
+    document.getElementById('health-character'),
+    document.getElementById('progressbar-character')
+);
+
+const enemy = new Pokemon(
+    "Charmander",
+    100,
+    {
+        fireBall: 25,
+        flameCharge: 30
+    },
+    document.getElementById('health-enemy'),
+    document.getElementById('progressbar-enemy')
+);
+
+// Функція атаки
+function performAttack(attackType) {
+    // Атака персонажа
+    const damage = character.attack(attackType);
+    enemy.changeHP(damage);
+    
+    // Атака противника у відповідь
+    if (enemy.damageHP > 0) {
+        const enemyAttackType = Math.random() < 0.5 ? 'fireBall' : 'flameCharge';
+        const enemyDamage = enemy.attack(enemyAttackType);
+        character.changeHP(enemyDamage);
+    }
 }
 
 // Ініціалізація гри
@@ -117,11 +132,11 @@ function init() {
     
     const buttons = createButtons();
     
-    buttons.thunderJoltBtn.addEventListener('click', () => attack('thunder'));
-    buttons.electroBallBtn.addEventListener('click', () => attack('electro'));
+    buttons.thunderJoltBtn.addEventListener('click', () => performAttack('thunderJolt'));
+    buttons.electroBallBtn.addEventListener('click', () => performAttack('electroBall'));
     
-    renderHP(character);
-    renderHP(enemy);
+    character.renderHP();
+    enemy.renderHP();
 }
 
 init();
